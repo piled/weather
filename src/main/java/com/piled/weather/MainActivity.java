@@ -3,6 +3,7 @@ package com.piled.weather;
 import java.net.URLEncoder;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.view.MenuItem;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
@@ -30,22 +32,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
 
     private static final String TAG = "weather";
     
     private ListView mList;
     private TextView mDescription;
+    private ForecastAdapter mAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         getActionBar().setIcon(android.R.color.transparent);
-        Log.i(TAG, "onCreate()");
         mList = (ListView)findViewById(R.id.forecastList);
+        mList.setOnItemClickListener(this);
         mDescription = (TextView)findViewById(R.id.description);
-        //new ReadyTask(mapFragment).executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
         checkTheWeather("Nome, AK");
     }
     
@@ -85,6 +87,18 @@ public class MainActivity extends Activity {
         return true;
     }
     
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+        Log.d(TAG, "onItemClick(): @" + position + " #" + id);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        JSONObject item = mAdapter.getItem(position);
+        builder.setTitle(item.optString("date") + ", " + item.optString("day"));
+        builder.setMessage(item.optString("text") + ", from " + item.optString("low") + " to " + item.optString("high"));
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setCanceledOnTouchOutside(true);
+        alertDialog.show();
+    }
+
     private void checkTheWeather(String thePlace) {
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22" + URLEncoder.encode(thePlace) +
@@ -123,7 +137,8 @@ public class MainActivity extends Activity {
                 JSONArray forecast = item.optJSONArray("forecast");
                 if (forecast != null) {
                     Log.d(TAG, "forecast " + forecast.toString());
-                    mList.setAdapter(new ForecastAdapter(forecast));
+                    mAdapter = new ForecastAdapter(forecast);
+                    mList.setAdapter(mAdapter);
                 } else {
                     mList.setAdapter(null);
                 }
