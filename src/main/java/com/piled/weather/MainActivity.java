@@ -1,43 +1,17 @@
 package com.piled.weather;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.Vector;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
-import android.app.AlarmManager;
-import android.app.Activity;
-//import android.app.PendingIntent;
-import android.content.Intent;
-//import android.os.AsyncTask;
-import android.os.Bundle;
-//import android.os.SystemClock;
-import android.view.View;
-import android.widget.Toast;
-
-import android.content.Context;
-
 import java.net.URLEncoder;
 
+import android.app.Activity;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -51,6 +25,11 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 public class MainActivity extends Activity {
 
     private static final String TAG = "weather";
@@ -62,6 +41,7 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        getActionBar().setIcon(android.R.color.transparent);
         Log.i(TAG, "onCreate()");
         mList = (ListView)findViewById(R.id.forecastList);
         mDescription = (TextView)findViewById(R.id.description);
@@ -116,23 +96,45 @@ public class MainActivity extends Activity {
                 //mTxtDisplay.setText("Response: " + response.toString());
                 Log.d(TAG, "Got " + response.toString());
                 JSONObject query = response.optJSONObject("query");
+                if (query == null) {
+                    return;
+                }
                 Log.d(TAG, "query " + query.toString());
                 JSONObject results = query.optJSONObject("results");
+                if (results == null) {
+                    return;
+                }
                 Log.d(TAG, "results " + results.toString());
                 JSONObject channel = results.optJSONObject("channel");
+                if (channel == null) {
+                    return;
+                }
                 Log.d(TAG, "channel " + channel.toString());
                 String title = channel.optString("title");
+                if (channel == null) {
+                    return;
+                }
                 getActionBar().setTitle(title);
                 JSONObject item = channel.optJSONObject("item");
+                if (channel == null) {
+                    return;
+                }
                 Log.d(TAG, "item " + item.toString());
-
                 JSONArray forecast = item.optJSONArray("forecast");
-                Log.d(TAG, "forecast " + forecast.toString());
-                mList.setAdapter(new ForecastAdapter(forecast));
+                if (forecast != null) {
+                    Log.d(TAG, "forecast " + forecast.toString());
+                    mList.setAdapter(new ForecastAdapter(forecast));
+                } else {
+                    mList.setAdapter(null);
+                }
                 String description = item.optString("description");
-                Log.d(TAG, "description " + description);
-                mDescription.setText(Html.fromHtml(Html.fromHtml(description).toString()));
-                mDescription.setMovementMethod(LinkMovementMethod.getInstance());
+                if (description != null) {
+                    Log.d(TAG, "description " + description);
+                    mDescription.setText(Html.fromHtml(Html.fromHtml(description).toString()));
+                    mDescription.setMovementMethod(LinkMovementMethod.getInstance());
+                } else {
+                    mDescription.setText("");
+                }
             }
         }, new Response.ErrorListener() {
             @Override
